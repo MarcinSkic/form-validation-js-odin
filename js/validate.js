@@ -10,13 +10,26 @@ class ValidableInput {
                 return;
             this.validate();
         });
+        input.addEventListener("focusin", () => {
+            if (input.validationMessage === "")
+                return;
+            this.validate(true);
+        });
+        input.addEventListener("focusout", () => {
+            if (input.value === "")
+                return;
+            this.input.classList.add("visited");
+            this.validate();
+        });
     }
-    validate() {
+    validate(reportValidity = false) {
         for (const validation of this.validations) {
             const validationResult = validation(this.input);
             if (validationResult !== true) {
                 this.input.setCustomValidity(String(validationResult));
-                this.input.reportValidity();
+                if (reportValidity) {
+                    this.input.reportValidity();
+                }
                 return false;
             }
         }
@@ -77,7 +90,7 @@ form.addEventListener("submit", (ev) => {
         }
     });
     if (succeded) {
-        console.log("Validation succeded");
+        console.log("Validation succeded ✋");
     }
     ev.preventDefault();
 });
