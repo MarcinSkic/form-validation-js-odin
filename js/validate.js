@@ -2,6 +2,7 @@ import countries from "./countries.js";
 let validated = false;
 class ValidableInput {
     constructor(input, ...validations) {
+        this.associatedInputs = [];
         this.input = input;
         this.validations = validations;
         input.addEventListener("input", () => {
@@ -20,6 +21,12 @@ class ValidableInput {
             }
         }
         this.input.setCustomValidity("");
+        for (const input of this.associatedInputs) {
+            if (input.input.validationMessage !== "") {
+                console.log(input);
+                input.validate();
+            }
+        }
         return true;
     }
 }
@@ -43,14 +50,18 @@ function validateIsZipcode(input) {
         `Zipcode '${input.value}' is incorrect, should be (00-000)`);
 }
 function validateEqualsInput(input) {
-    return this.value === input.value || `Passwords don't match`;
+    return this.input.value === input.value || `Passwords don't match`;
 }
 const form = document.querySelector("form");
 const emailInput = new ValidableInput(form.querySelector("input[name = 'email']"), validateNotEmpty, validateIsEmail);
 const countryInput = new ValidableInput(form.querySelector("input#country"), validateNotEmpty, validateIsCountry);
 const zipcodeInput = new ValidableInput(form.querySelector("input#zipcode"), validateNotEmpty, validateIsZipcode);
-const passwordInput = new ValidableInput(form.querySelector("input#password"), validateNotEmpty, validateEqualsInput.bind(form.querySelector("input#password-confirm")));
-const passwordConfirmInput = new ValidableInput(form.querySelector("input#password-confirm"), validateNotEmpty, validateEqualsInput.bind(form.querySelector("input#password")));
+const passwordInput = new ValidableInput(form.querySelector("input#password"), validateNotEmpty);
+const passwordConfirmInput = new ValidableInput(form.querySelector("input#password-confirm"), validateNotEmpty);
+passwordInput.validations.push(validateEqualsInput.bind(passwordConfirmInput));
+passwordInput.associatedInputs.push(passwordConfirmInput);
+passwordConfirmInput.validations.push(validateEqualsInput.bind(passwordInput));
+passwordConfirmInput.associatedInputs.push(passwordInput);
 form.addEventListener("submit", (ev) => {
     let succeded = true;
     const inputs = [

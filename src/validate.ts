@@ -4,6 +4,7 @@ let validated = false;
 class ValidableInput {
     input: HTMLInputElement;
     validations: ((input: HTMLInputElement) => boolean | String)[];
+    associatedInputs: ValidableInput[] = [];
 
     constructor(
         input: HTMLInputElement,
@@ -29,6 +30,14 @@ class ValidableInput {
             }
         }
         this.input.setCustomValidity("");
+
+        for (const input of this.associatedInputs) {
+            if (input.input.validationMessage !== "") {
+                console.log(input);
+                input.validate();
+            }
+        }
+
         return true;
     }
 }
@@ -59,8 +68,8 @@ function validateIsZipcode(input: HTMLInputElement) {
     );
 }
 
-function validateEqualsInput(this: HTMLInputElement, input: HTMLInputElement) {
-    return this.value === input.value || `Passwords don't match`;
+function validateEqualsInput(this: ValidableInput, input: HTMLInputElement) {
+    return this.input.value === input.value || `Passwords don't match`;
 }
 
 const form = document.querySelector("form")!;
@@ -83,14 +92,17 @@ const zipcodeInput = new ValidableInput(
 );
 const passwordInput = new ValidableInput(
     form.querySelector("input#password")!,
-    validateNotEmpty,
-    validateEqualsInput.bind(form.querySelector("input#password-confirm")!)
+    validateNotEmpty
 );
 const passwordConfirmInput = new ValidableInput(
     form.querySelector("input#password-confirm")!,
-    validateNotEmpty,
-    validateEqualsInput.bind(form.querySelector("input#password")!)
+    validateNotEmpty
 );
+
+passwordInput.validations.push(validateEqualsInput.bind(passwordConfirmInput));
+passwordInput.associatedInputs.push(passwordConfirmInput);
+passwordConfirmInput.validations.push(validateEqualsInput.bind(passwordInput));
+passwordConfirmInput.associatedInputs.push(passwordInput);
 
 form.addEventListener("submit", (ev: SubmitEvent) => {
     let succeded = true;
